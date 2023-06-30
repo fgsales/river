@@ -130,3 +130,7 @@ benchmarks/.asv
 
 # Cargo file
 Cargo.lock
+
+
+# resutls
+results/
