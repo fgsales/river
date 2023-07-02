@@ -16,13 +16,13 @@ from sklearn.model_selection import ParameterGrid
 
 # Define your models, datasets and metrics here
 hoeffding_tree_params_grid = {
-    'grace_period': [5, 20, 50, 100, 200],
-    'max_depth': [None, 1, 2, 3, 5, 10],
+    'grace_period': [5, 20, 50, 100],
+    'max_depth': [None, 5, 10],
     'delta': [0.001, 0.01, 0.1],
-    'tau': [0.01, 0.1, 1.0],
+    'tau': [0.01, 0.1],
     'leaf_prediction': ['mean', 'model', 'adaptive'],
     'model_selector_decay': [0.1, 0.5, 0.9],
-    'merit_preprune': [True, False]
+    'merit_preprune': [True, False],
 }
 
 model_list = []
@@ -50,11 +50,11 @@ datasets_list = [
     # ["WaterFlow",datasets.WaterFlow()],
 ]
 
-metrics_list = [
-    metrics.MAE(),
-    metrics.MAPE(),
-    metrics.RMSE()
-]
+# metrics_list = [
+#     metrics.MAE(),
+#     metrics.MAPE(),
+#     metrics.RMSE()
+# ]
 
 percent = 0.2
 
@@ -67,13 +67,23 @@ with open('results/results.csv', 'a', newline='') as file:
 
     # Write the header row
     writer.writerow(header_row)
-    writer = csv.writer(file)
     
+    # Calculate the total number of models to be trained
+    total_models = len(model_list) * len(datasets_list)
+    current_model = 0
+    init_time = time.time()
+
     # Iterate over models
-    for (model,params) in model_list:
+    for (model, params) in model_list:
         
         # Iterate over datasets
-        for dataset_name,dataset in datasets_list:
+        for dataset_name, dataset in datasets_list:
+            metrics_list = [
+                metrics.MAE(),
+                metrics.MAPE(),
+                metrics.RMSE()
+            ]
+            
             # Training and testing time measurement
             start_train_time = time.time()
             for i, (x, y) in enumerate(dataset):
@@ -84,11 +94,19 @@ with open('results/results.csv', 'a', newline='') as file:
                     model.learn_one(x, y)
                 else:
                     model.learn_one(x, y)
+                
+            # Update the progress and estimated time
+            current_model += 1
+            progress = current_model / total_models
+            remaining_models = total_models - current_model
+            total_time = time.time() - init_time
+            estimated_time = (total_time/current_model) * remaining_models
+            print(f"Progress: {progress:.1%} | Estimated Time to Finish: {estimated_time:.2f} seconds", end='\r')
+
             end_train_time = time.time()
             train_time = end_train_time - start_train_time
             
-            
-            # Get metric result
+            # Get metric results
             metrics_results = []
             for metric in metrics_list:
                 metric_result = metric.get()
