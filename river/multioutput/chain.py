@@ -233,16 +233,19 @@ class RegressorChain(BaseChain, base.MultiTargetRegressor):
             # Make predictions before the model is updated to avoid leakage
             y_pred = reg.predict_one(x)
 
+            if y_pred == {}:
+                y_pred = {0: 0.0}
+
             # We handle the case where an output has been seen in the past but is missing now
             try:
                 y_o = y[o]
                 n_seen += 1
-                reg.learn_one(x, y_o, **kwargs)
+                reg.learn_one(x, {0: y_o}, **kwargs)
             except KeyError:
                 pass
 
             # The predictions are stored as features for the next label
-            x[o] = y_pred
+            x[-1] = y_pred[0]
 
         # Now we check if there are any new outputs
         n_unseen = len(y) - n_seen
@@ -261,8 +264,109 @@ class RegressorChain(BaseChain, base.MultiTargetRegressor):
             return y_pred
 
         for o, clf in self.items():
-            y_pred[o] = clf.predict_one(x, **kwargs)
+            y_pred[o] = clf.predict_one(x, **kwargs)[0]
             x[o] = y_pred[o]
+
+        return y_pred
+
+class RegressorFullChain(BaseChain, base.MultiTargetRegressor):
+    """A multi-output model that arranges regressors into a chain.
+
+    This will create one model per output. The prediction of the first output will be used as a
+    feature in the second output. The prediction for the second output will be used as a feature
+    for the third, etc. This "chain model" is therefore capable of capturing dependencies between
+    outputs.
+
+    Parameters
+    ----------
+    model
+        The regression model used to make predictions for each target.
+    order
+        A list with the targets order in which to construct the chain. If `None` then the order
+        will be inferred from the order of the keys in the target.
+
+    """
+
+    def __init__(self, model: base.Regressor, order: list | None = None):
+        super().__init__(model, order)
+
+    @classmethod
+    def _unit_test_params(cls):
+        yield {"model": linear_model.LinearRegression()}
+
+    def learn_one(self, x, y, **kwargs):
+        x = copy.copy(x)
+        y = copy.copy(y[0])
+        n_seen = 0
+
+        for o in self.order:
+            reg = self[0]
+            if o == self.order[0]:
+                last_dict = x[list(x.keys())[-1]]
+                x[o][-1] = last_dict[list(last_dict.keys())[-1]]
+
+            new_dict = {}
+            for i, key in enumerate(x[o].keys()):
+                new_dict[i] = x[o][key]
+
+            x_o = new_dict
+
+            # Make predictions before the model is updated to avoid leakage
+                
+            y_pred = reg.predict_one(x_o)
+
+            if y_pred == {}:
+                y_pred = 0.0
+
+            if not isinstance(y_pred, dict):
+                y_pred = {0: y_pred}
+
+            # We handle the case where an output has been seen in the past but is missing now
+            try:
+                y_o = y[o]
+                n_seen += 1
+                reg.learn_one(x_o, {0: y_o}, **kwargs)
+            except KeyError:
+                pass
+
+            # The predictions are stored as features for the next label
+            if o != self.order[-1]:
+                x[o+1][-1] = y_pred[0]
+
+        # Now we check if there are any new outputs
+        n_unseen = len(y) - n_seen
+        if n_unseen:
+            for o in y:
+                if o not in self.order:
+                    self.order.append(o)
+
+        return self
+
+    def predict_one(self, x, **kwargs):
+        x = copy.copy(x)
+        y_pred = {}
+
+        if not isinstance(self.order, list):
+            return y_pred
+
+        for o, _ in x.items():
+            if o == self.order[0]:
+                last_dict = x[list(x.keys())[-1]]
+                x[o][-1] = last_dict[list(last_dict.keys())[-1]]
+
+            new_dict = {}
+            for i, key in enumerate(x[o].keys()):
+                new_dict[i] = x[o][key]
+
+            x_o = new_dict
+
+            res = self[0].predict_one(x_o, **kwargs)
+            if not isinstance(res, dict):
+                y_pred[o] = res
+            else:
+                y_pred[o] = res[0]
+            if o != self.order[-1]:
+                x[o+1][-1] = y_pred[o]
 
         return y_pred
 

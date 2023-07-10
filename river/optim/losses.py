@@ -22,6 +22,7 @@ __all__ = [
     "Hinge",
     "Huber",
     "EpsilonInsensitiveHinge",
+    "MultiOutputEpsilonInsensitiveHinge",
     "Log",
     "MultiClassLoss",
     "Poisson",
@@ -58,7 +59,6 @@ class RegressionLoss(Loss):
 
     def mean_func(self, y_pred):
         return y_pred
-
 
 class Absolute(RegressionLoss):
     """Absolute loss, also known as the mean absolute error or L1 loss.
@@ -290,6 +290,20 @@ class EpsilonInsensitiveHinge(RegressionLoss):
         elif y_pred + self.eps < y_true:
             return -1
         return 0
+    
+class MultiOutputEpsilonInsensitiveHinge(EpsilonInsensitiveHinge):
+    """Epsilon-Insensitive Hinge loss for multi-output models.
+
+    This assumes that both the true values and the predicted values are dicts, where each key corresponds to an output.
+    """
+
+    def __call__(self, y_true, y_pred):
+        losses = {}
+        for output in y_true.keys():
+            scaled_y_true = y_true[output] * 2 - 1  # [0, 1] -> [-1, 1]
+            losses[output] = max(0., abs(scaled_y_true - y_pred[output]) - self.eps)
+        return losses
+
 
 
 class Log(BinaryLoss):

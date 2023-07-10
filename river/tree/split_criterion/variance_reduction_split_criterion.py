@@ -21,19 +21,22 @@ class VarianceReductionSplitCriterion(SplitCriterion):
 
     def merit_of_split(self, pre_split_dist, post_split_dist):
         vr = 0.0
-        n = pre_split_dist.mean.n
+        n = sum(dist.mean.n for dist in pre_split_dist.values())
 
-        count = 0
-        for i in range(len(post_split_dist)):
-            n_i = post_split_dist[i].mean.n
-            if n_i >= self.min_samples_split:
-                count += 1
-        if count == len(post_split_dist):
-            vr = self.compute_var(pre_split_dist)
+        for target in pre_split_dist.keys():
+            count = 0
             for i in range(len(post_split_dist)):
-                n_i = post_split_dist[i].mean.n
-                vr -= n_i / n * self.compute_var(post_split_dist[i])
+                n_i = post_split_dist[i][target].mean.n
+                if n_i >= self.min_samples_split:
+                    count += 1
+            if count == len(post_split_dist):
+                vr_target = self.compute_var(pre_split_dist[target])
+                for i in range(len(post_split_dist)):
+                    n_i = post_split_dist[i][target].mean.n
+                    vr_target -= n_i / n * self.compute_var(post_split_dist[i][target])
+                vr += vr_target  # Summing variance reduction for each target. Change as needed.
         return vr
+
 
     @staticmethod
     def compute_var(dist):

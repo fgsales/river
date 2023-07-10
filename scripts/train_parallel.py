@@ -84,11 +84,11 @@ mlp_hidden_dims = [(5,), (5, 5), (10,), (10, 10), (20,), (20, 20)]
 #     model = (preprocessing.StandardScaler() | linear_model.PARegressor(**params))
 #     model_list.append((model, params))
 
-model_list.append(((preprocessing.StandardScaler() | linear_model.LinearRegression()), {}, {}))
+# model_list.append(((preprocessing.StandardScaler() | linear_model.LinearRegression()), {}))
 
-# submodel = linear_model.LinearRegression()
-# model = (preprocessing.StandardScaler() | tree.iSOUPTreeRegressor(grace_period=10, leaf_model=submodel))
-# model_list.append((model, submodel, {}))
+submodel = linear_model.LinearRegression()
+model = (preprocessing.StandardScaler() | tree.iSOUPTreeRegressor(grace_period=10, leaf_model=submodel))
+model_list.append((model, submodel, {}))
 
 DATASETS = ["ETTh1","ETTh2"]
 
@@ -135,7 +135,7 @@ percent = 0.2
 
 header_row = ['Type', 'Model', 'Submodel', 'Params', 'Dataset', 'Metrics', 'Train Time (s)', 'Mean Learn Time (ms)', 'Mean Predict Time (ms)']
 
-results_dir = 'results/results.csv'
+results_dir = 'results/results_parallel.csv'
 
 with open(results_dir, 'a', newline='') as file:
     writer = csv.writer(file)
@@ -162,8 +162,9 @@ with open(results_dir, 'a', newline='') as file:
                 model = (preprocessing.StandardScaler() | 
                     neural_net.MLPRegressor(hidden_dims=params, activations=activations_list, optimizer=optim.SGD(1e-3)))
 
-            # model to chain models
-            model_train = multioutput.RegressorChain(model, order=list(range(n_attributes)))
+            # model to parallel models
+            # model_train = multioutput.RegressorChain(model, order=list(range(n_attributes)))
+            model_train = multioutput.RegressorParallel(model)
 
             metrics_list = [
                 metrics.multioutput.MicroAverage(metrics.MAE()),
@@ -182,6 +183,7 @@ with open(results_dir, 'a', newline='') as file:
 
                     for metric in metrics_list:
                         metric.update(y, y_pred)
+
                     
                     start_learn_time = time.time()
                     model_train.learn_one(x, y)
@@ -209,7 +211,7 @@ with open(results_dir, 'a', newline='') as file:
                 metric_result = metric.get()
                 metrics_results.append(f"{metric}")
 
-            writer.writerow(["Chain", model, submodel, params, dataset_name, metrics_results, train_time, mean_learn_time * 1000, mean_predict_time * 1000])
+            writer.writerow(["Parallel", model, submodel, params, dataset_name, metrics_results, train_time, mean_learn_time * 1000, mean_predict_time * 1000])
 
             if rename:
                 rename = False

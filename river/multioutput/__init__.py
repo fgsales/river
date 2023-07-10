@@ -6,7 +6,9 @@ from .chain import (
     MonteCarloClassifierChain,
     ProbabilisticClassifierChain,
     RegressorChain,
+    RegressorFullChain,
 )
+from .parallel import RegressorParallel, RegressorFullParallel
 from .encoder import MultiClassEncoder
 
 __all__ = [
@@ -15,4 +17,7 @@ __all__ = [
     "MultiClassEncoder",
     "ProbabilisticClassifierChain",
     "RegressorChain",
+    "RegressorFullChain",
+    "RegressorFullParallel",
+    "RegressorParallel",
 ]
