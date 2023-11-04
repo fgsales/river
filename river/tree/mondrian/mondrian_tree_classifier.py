@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-import sys
 
 from river import base, utils
 from river.tree.mondrian.mondrian_tree import MondrianTree
@@ -54,7 +53,7 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
     >>> metric = metrics.Accuracy()
 
     >>> evaluate.progressive_val_score(dataset, model, metric)
-    Accuracy: 57.52%
+    Accuracy: 58.52%
 
     References
     ----------
@@ -76,11 +75,12 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
             step=step,
             loss="log",
             use_aggregation=use_aggregation,
-            split_pure=split_pure,
             iteration=iteration,
             seed=seed,
         )
+
         self.dirichlet = dirichlet
+        self.split_pure = split_pure
 
         # Training attributes
         # The previously observed classes set
@@ -107,6 +107,7 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
         ----------
         node
             Node to evaluate the score.
+
         """
 
         return node.score(self._y, self.dirichlet, len(self._classes))
@@ -118,6 +119,7 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
         ----------
         node
             Node to make predictions.
+
         """
 
         return node.predict(self.dirichlet, self._classes, len(self._classes))
@@ -129,6 +131,7 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
         ----------
         node
             Node to evaluate the loss.
+
         """
 
         return node.loss(self._y, self.dirichlet, len(self._classes))
@@ -140,6 +143,7 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
         ----------
         node
             Node to update the weight.
+
         """
 
         return node.update_weight(
@@ -154,6 +158,7 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
         ----------
         node
             Target node.
+
         """
 
         node.update_count(self._y)
@@ -169,6 +174,7 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
             Target node.
         do_weight_update
             Whether we should update the weights or not.
+
         """
 
         return node.update_downwards(
@@ -193,6 +199,7 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
         ----------
         node
             Target node.
+
         """
 
         #  Don't split if the node is pure: all labels are equal to the one of y_t
@@ -202,11 +209,7 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
         # If x_t extends the current range of the node
         if extensions_sum > 0:
             # Sample an exponential with intensity = extensions_sum
-            # try catch to handle the Overflow situation in the exponential
-            try:
-                T = math.exp(1 / extensions_sum)
-            except OverflowError:
-                T = sys.float_info.max  # we get the largest possible output instead
+            T = utils.random.exponential(1 / extensions_sum, rng=self._rng)
 
             time = node.time
             # Splitting time of the node (if splitting occurs)
@@ -246,6 +249,7 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
             Feature of the node.
         is_right_extension
             Should we extend the tree in the right or left direction.
+
         """
 
         new_depth = node.depth + 1
@@ -420,6 +424,7 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
         ----------
         leaf
             Leaf to start from when going upward.
+
         """
 
         current_node = leaf
@@ -460,10 +465,12 @@ class MondrianTreeClassifier(MondrianTree, base.Classifier):
         ----------
         x
             Feature vector.
+
         """
 
         # If the tree hasn't seen any sample, then it should return
         # the default empty dict
+
         if not self._is_initialized:
             return {}
 

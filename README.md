@@ -4,8 +4,12 @@
 
 <p align="center">
   <!-- Tests -->
-  <a href="https://github.com/online-ml/river/actions/workflows/ci.yml">
-    <img src="https://github.com/online-ml/river/actions/workflows/ci.yml/badge.svg" alt="CI Pipeline">
+  <a href="https://github.com/online-ml/river/actions/workflows/unit-tests.yml">
+    <img src="https://github.com/online-ml/river/actions/workflows/unit-tests.yml/badge.svg" alt="unit-tests">
+  </a>
+  <!-- Code quality -->
+  <a href="https://github.com/online-ml/river/actions/workflows/code-quality.yml">
+    <img src="https://github.com/online-ml/river/actions/workflows/code-quality.yml/badge.svg" alt="code-quality">
   </a>
   <!-- Documentation -->
   <a href="https://riverml.xyz">
@@ -14,10 +18,6 @@
   <!-- Discord -->
   <a href="https://discord.gg/qNmrKEZMAn">
     <img src="https://dcbadge.vercel.app/api/server/qNmrKEZMAn?style=flat-square" alt="discord">
-  </a>
-  <!-- Roadmap -->
-  <a href="https://github.com/orgs/online-ml/projects/3/">
-    <img src="https://img.shields.io/website?label=roadmap&style=flat-square&url=https://github.com/orgs/online-ml/projects/3/" alt="roadmap">
   </a>
   <!-- PyPI -->
   <a href="https://pypi.org/project/river">
@@ -95,7 +95,7 @@ Now let's run the model on the dataset in a streaming fashion. We sequentially i
 ...     model = model.learn_one(x, y)      # make the model learn
 
 >>> metric
-Accuracy: 89.20%
+Accuracy: 89.28%
 
 ```
 
@@ -109,19 +109,16 @@ River is intended to work with **Python 3.8 and above**. Installation can be don
 pip install river
 ```
 
-There are [wheels available](https://pypi.org/project/river/#files) for Linux, MacOS, and Windows, which means that you most probably won't have to build River from source.
+There are [wheels available](https://pypi.org/project/river/#files) for Linux, MacOS, and Windows. This means you most probably won't have to build River from source.
 
 You can install the latest development version from GitHub as so:
 
 ```sh
 pip install git+https://github.com/online-ml/river --upgrade
+pip install git+ssh://git@github.com/online-ml/river.git --upgrade  # using SSH
 ```
 
-Or, through SSH:
-
-```sh
-pip install git+ssh://git@github.com/online-ml/river.git --upgrade
-```
+This method requires having Cython and Rust installed on your machine.
 
 ## 🔮 Features
 
