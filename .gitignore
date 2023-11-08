@@ -132,5 +132,9 @@ Cargo.lock
 
 # results
 results/
+
+# data
+data/
+
 # WASM
 /*.html
