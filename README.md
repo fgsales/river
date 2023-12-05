@@ -1,5 +1,5 @@
 <p align="center">
-  <img height="220px" src="docs/img/logo.svg" alt="river_logo">
+  <img height="220px" src="https://github.com/online-ml/river/assets/8095957/64ad5fb6-383c-4bfb-af71-3d055a103a1a" alt="river_logo">
 </p>
 
 <p align="center">
@@ -91,8 +91,8 @@ Now let's run the model on the dataset in a streaming fashion. We sequentially i
 
 >>> for x, y in dataset:
 ...     y_pred = model.predict_one(x)      # make a prediction
-...     metric = metric.update(y, y_pred)  # update the metric
-...     model = model.learn_one(x, y)      # make the model learn
+...     metric.update(y, y_pred)  # update the metric
+...     model.learn_one(x, y)              # make the model learn
 
 >>> metric
 Accuracy: 89.28%

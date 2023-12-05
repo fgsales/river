@@ -80,8 +80,8 @@ class ClassifierChain(BaseChain, base.MultiLabelClassifier):
     ...     # Convert y values to booleans
     ...     y = {i: yi == 'TRUE' for i, yi in y.items()}
     ...     y_pred = model.predict_one(x)
-    ...     metric = metric.update(y, y_pred)
-    ...     model = model.learn_one(x, y)
+    ...     metric.update(y, y_pred)
+    ...     model.learn_one(x, y)
 
     >>> metric
     MicroAverage(Jaccard): 41.81%
@@ -145,8 +145,6 @@ class ClassifierChain(BaseChain, base.MultiLabelClassifier):
             for o in y:
                 if o not in self.order:
                     self.order.append(o)
-
-        return self
 
     def predict_proba_one(self, x, **kwargs):
         x = copy.copy(x)
@@ -253,8 +251,6 @@ class RegressorChain(BaseChain, base.MultiTargetRegressor):
             for o in y:
                 if o not in self.order:
                     self.order.append(o)
-
-        return self
 
     def predict_one(self, x, **kwargs):
         x = copy.copy(x)
@@ -408,8 +404,8 @@ class ProbabilisticClassifierChain(ClassifierChain):
     >>> for x, y in dataset:
     ...    y_pred = model.predict_one(x)
     ...    y_pred = {k: y_pred.get(k, 0) for k in y}
-    ...    metric = metric.update(y, y_pred)
-    ...    model = model.learn_one(x, y)
+    ...    metric.update(y, y_pred)
+    ...    model.learn_one(x, y)
 
     >>> metric
     MicroAverage(Jaccard): 51.84%
@@ -503,8 +499,8 @@ class MonteCarloClassifierChain(ProbabilisticClassifierChain):
     >>> for x, y in dataset:
     ...    y_pred = model.predict_one(x)
     ...    y_pred = {k: y_pred.get(k, 0) for k in y}
-    ...    metric = metric.update(y, y_pred)
-    ...    model = model.learn_one(x, y)
+    ...    metric.update(y, y_pred)
+    ...    model.learn_one(x, y)
 
     >>> metric
     MicroAverage(Jaccard): 51.79%

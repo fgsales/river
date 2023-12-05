@@ -169,9 +169,9 @@ class BaseForest(base.Ensemble):
             k = poisson(rate=self.lambda_value, rng=self._rng)
             if k > 0:
                 if not self._warning_detection_disabled and self._background[i] is not None:
-                    self._background[i].learn_one(x=x, y=y, sample_weight=k)  # type: ignore
+                    self._background[i].learn_one(x=x, y=y, w=k)  # type: ignore
 
-                model.learn_one(x=x, y=y, sample_weight=k)
+                model.learn_one(x=x, y=y, w=k)
 
                 drift_input = None
                 if not self._warning_detection_disabled:
@@ -208,8 +208,6 @@ class BaseForest(base.Ensemble):
 
                         # Update warning tracker
                         self._drift_tracker[i] += 1
-
-        return self
 
     def _init_ensemble(self, features: list):
         self._set_max_features(len(features))
