@@ -43,16 +43,50 @@ class GNN(torch.nn.Module):
 
         return output
 
-class NN(torch.nn.Module):
-    def __init__(self, input_size, hidden_size, pred_len):
-        super(NN, self).__init__()
+class DenseNN(torch.nn.Module):
+    def __init__(self, hidden_size, num_features=207, past_history=12, pred_len=6):
+        super(DenseNN, self).__init__()
+        input_size = num_features * past_history
+        output_size = num_features * pred_len
 
         self.body = torch.nn.Sequential(
             torch.nn.Linear(input_size, hidden_size),
             torch.nn.ReLU(),
-            torch.nn.Linear(hidden_size, pred_len)
+            torch.nn.Linear(hidden_size, output_size)
         )
 
     def forward(self, x):
         output = self.body(x)
         return output
+    
+class RNNModel(torch.nn.Module):
+    def __init__(self, hidden_size, num_features=207, past_history=12, pred_len=6):
+        super(RNNModel, self).__init__()
+        output_size = num_features * pred_len
+
+        self.rnn = torch.nn.RNN(num_features, hidden_size, batch_first=True)
+        self.fc = torch.nn.Linear(hidden_size * past_history, output_size)
+
+    def forward(self, x):
+        out, _ = self.rnn(x)
+        out = out.reshape(out.shape[0], -1)
+        out = self.fc(out)
+        return out
+    
+class CNNModel(torch.nn.Module):
+    def __init__(self, hidden_size, num_features=207, past_history=12, pred_len=6):
+        super(CNNModel, self).__init__()
+        output_size = num_features * pred_len
+
+        self.layer1 = torch.nn.Conv1d(num_features, hidden_size, kernel_size=3, stride=1, padding=1)
+        self.relu = torch.nn.ReLU()
+        self.layer2 = torch.nn.Conv1d(hidden_size, output_size // past_history, kernel_size=3, stride=1, padding=1)
+        self.fc = torch.nn.Linear(past_history, pred_len)
+
+    def forward(self, x):
+        out = self.layer1(x)
+        out = self.relu(out)
+        out = self.layer2(out)
+        out = out.view(out.size(0), -1, past_history)
+        out = self.fc(out)
+        return out.view(out.size(0), -1)

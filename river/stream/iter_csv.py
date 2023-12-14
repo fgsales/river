@@ -231,30 +231,26 @@ def sliding_window_iter_csv(
     reader = DictReader(fraction=fraction, rng=random.Random(seed), f=buffer, **kwargs)
 
     # Initialize history and future buffers
-    history_buffer = deque(maxlen=past_history)
-    future_buffer = deque(maxlen=forecast_horizon)
+    history_buffer = deque(maxlen=past_history+forecast_horizon)
+    # future_buffer = deque(maxlen=forecast_horizon)
 
     for row in reader:
         history_buffer.append(row.copy())
         
-        if len(history_buffer) < past_history:
+        if len(history_buffer) < past_history + forecast_horizon:
             continue
 
-        # Prepare data for yield
         window_data = {}
+        # iterate until past history for past and the forecast horizon for future
         for i, history_row in enumerate(history_buffer):
-            offset = i - past_history + 1
-            for key, value in history_row.items():
-                window_data[f'{key}_{offset}'] = value
-
-        # Fetch future data
-        future_data = list(itertools.islice(reader, forecast_horizon))
-        for i, future_row in enumerate(future_data):
-            offset = i + 1
-            for key, value in future_row.items():
-                window_data[f'{key}_+{offset}'] = value
-
-        future_buffer.extend(future_data)
+            if i < past_history:
+                offset = i - past_history + 1
+                for key, value in history_row.items():
+                    window_data[f'{key}_{offset}'] = value
+            else:
+                offset = i - past_history + 1
+                for key, value in history_row.items():
+                    window_data[f'{key}_+{offset}'] = value
 
         if drop:
             window_data = {k: v for k, v in window_data.items() if k.split('_')[0] not in drop}
