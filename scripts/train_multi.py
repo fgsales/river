@@ -140,7 +140,7 @@ percent = 0.2
 # percent = 0
 
 # train_types = ["Multi", "Chain", "Full_Parallel", "Parallel", "Hybrid_2", "Hybrid_3"]
-train_types = ["Full_Chain"]
+train_types = ["Parallel"]
 
 print(f"Created {len(model_list) * len(train_types)} models for {len(DATASETS)} datasets")
 

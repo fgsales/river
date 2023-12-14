@@ -7,7 +7,10 @@ import random
 from .. import base
 from . import utils
 
-__all__ = ["iter_csv"]
+from collections import deque
+import itertools
+
+__all__ = ["iter_csv", "iter_csv_with_moving_window"]
 
 
 class DictReader(csv.DictReader):
@@ -186,4 +189,119 @@ def iter_csv(
         buffer.close()
 
     # Reset the file size limit to it's original value
+    csv.field_size_limit(limit)
+
+def sliding_window_iter_csv(
+    filepath_or_buffer,
+    target: str | list[str] | None = None,
+    converters: dict | None = None,
+    parse_dates: dict | None = None,
+    drop: list[str] | None = None,
+    drop_nones=False,
+    fraction=1.0,
+    compression="infer",
+    seed: int | None = None,
+    field_size_limit: int | None = None,
+    past_history: int = 5,
+    forecast_horizon: int = 2,
+    **kwargs,
+) -> base.typing.Stream:
+    """ Iterates over rows from a CSV file with a sliding window for features and targets.
+
+    Additional Parameters
+    ---------------------
+    past_history : int
+        Number of past records to include in the sliding window.
+    forecast_horizon : int
+        Number of future records to predict.
+
+    Other parameters are the same as in iter_csv.
+    """
+
+    # Set the field size limit
+    limit = csv.field_size_limit()
+    if field_size_limit is not None:
+        csv.field_size_limit(field_size_limit)
+
+    # Open the file or buffer
+    buffer = filepath_or_buffer
+    if not hasattr(buffer, "read"):
+        buffer = utils.open_filepath(buffer, compression)
+
+    reader = DictReader(fraction=fraction, rng=random.Random(seed), f=buffer, **kwargs)
+
+    # Initialize history and future buffers
+    history_buffer = deque(maxlen=past_history)
+    future_buffer = deque(maxlen=forecast_horizon)
+
+    for row in reader:
+        history_buffer.append(row.copy())
+        
+        if len(history_buffer) < past_history:
+            continue
+
+        # Prepare data for yield
+        window_data = {}
+        for i, history_row in enumerate(history_buffer):
+            offset = i - past_history + 1
+            for key, value in history_row.items():
+                window_data[f'{key}_{offset}'] = value
+
+        # Fetch future data
+        future_data = list(itertools.islice(reader, forecast_horizon))
+        for i, future_row in enumerate(future_data):
+            offset = i + 1
+            for key, value in future_row.items():
+                window_data[f'{key}_+{offset}'] = value
+
+        future_buffer.extend(future_data)
+
+        if drop:
+            window_data = {k: v for k, v in window_data.items() if k.split('_')[0] not in drop}
+
+        # Apply converters
+        if converters is not None:
+            for key, conv in converters.items():
+                # Apply converter to each related window_data key
+                for window_key in list(window_data.keys()):
+                    if window_key.startswith(key):
+                        window_data[window_key] = conv(window_data[window_key])
+        else:
+            # Convert to float if no converters are specified
+            for window_key in list(window_data.keys()):
+                window_data[window_key] = float(window_data[window_key])
+
+        # Drop Nones
+        if drop_nones:
+            window_data = {k: v for k, v in window_data.items() if v is not None}
+
+        # Parse dates
+        if parse_dates is not None:
+            for key, fmt in parse_dates.items():
+                # Apply date parsing to each related window_data key
+                for window_key in list(window_data.keys()):
+                    if window_key.startswith(key):
+                        window_data[window_key] = dt.datetime.strptime(window_data[window_key], fmt)
+
+        # Separate the target from the features
+        y = {}
+        if target is None:
+            # If target is None, select all variables with future offsets as targets
+            for key in list(window_data.keys()):
+                if key.endswith(tuple([f"_+{i}" for i in range(1, forecast_horizon + 1)])):
+                    y[key] = window_data.pop(key)
+        else:
+            target_keys = [target] if isinstance(target, str) else target
+            for target_key in target_keys:
+                # Extract future values as targets
+                for i in range(1, forecast_horizon + 1):
+                    y[f'{target_key}_+{i}'] = window_data.pop(f'{target_key}_+{i}', None)
+
+        yield window_data, y
+
+    # Close the file if we opened it
+    if buffer is not filepath_or_buffer:
+        buffer.close()
+
+    # Reset the field size limit to its original value
     csv.field_size_limit(limit)
