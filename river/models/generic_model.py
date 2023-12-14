@@ -1,11 +1,11 @@
 import torch
-import torch_geometric_temporal
+# import torch_geometric_temporal
 import inspect
 import torch.nn.functional as F
 
-recurrent_layers = inspect.getmembers(torch_geometric_temporal.nn.recurrent, inspect.isclass)
-attn_layers = inspect.getmembers(torch_geometric_temporal.nn.attention, inspect.isclass)
-LAYER_MODULES = {name: class_obj for name, class_obj in [*recurrent_layers, *attn_layers]}
+# recurrent_layers = inspect.getmembers(torch_geometric_temporal.nn.recurrent, inspect.isclass)
+# attn_layers = inspect.getmembers(torch_geometric_temporal.nn.attention, inspect.isclass)
+# LAYER_MODULES = {name: class_obj for name, class_obj in [*recurrent_layers, *attn_layers]}
 
 
 def calculate_output_shape(**kwargs):

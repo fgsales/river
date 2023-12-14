@@ -22,11 +22,13 @@ class METR_LA(base.FileDataset):
             n_features=207,
             n_samples=34272,
         )
+        self.past_history = 12
+        self.forecast_horizon = 6
 
     def __iter__(self):
         return stream.sliding_window_iter_csv(
             self.path,
             drop=['datetime'],
-            past_history=12,
-            forecast_horizon=6,
+            past_history=self.past_history,
+            forecast_horizon=self.forecast_horizon,
         )
