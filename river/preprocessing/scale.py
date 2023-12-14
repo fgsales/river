@@ -172,6 +172,12 @@ class StandardScaler(base.MiniBatchTransformer):
         if self.with_std:
             return {i: safe_div(xi - self.means[i], self.vars[i] ** 0.5) for i, xi in x.items()}
         return {i: xi - self.means[i] for i, xi in x.items()}
+    
+    def inverse_transform_one(self, x):
+        if self.with_std:
+            return {i: xi* (self.vars[i]**0.5) + - self.means[i] for i, xi in x.items()}
+        
+        return {i: xi + self.means[i] for i, xi in x.items()}
 
     def learn_many(self, X: pd.DataFrame):
         """Update with a mini-batch of features.
@@ -243,6 +249,35 @@ class StandardScaler(base.MiniBatchTransformer):
         if self.with_std:
             stds = np.array([self.vars[c] ** 0.5 for c in X.columns], dtype=dtype)
             np.divide(Xt, stds, where=stds > 0, out=Xt)
+
+        return pd.DataFrame(Xt, index=X.index, columns=X.columns, copy=False)
+
+    def inverse_transform_many(self, X: pd.DataFrame):
+        """Scale a mini-batch of features.
+
+        Parameters
+        ----------
+        X
+            A dataframe where each column is a feature. An exception will be raised if any of
+            the features has not been seen during a previous call to `learn_many`.
+
+        """
+
+        # Determine dtype of input
+        dtypes = X.dtypes.unique()
+        dtype = dtypes[0] if len(dtypes) == 1 else np.float64
+
+        # Check if the dtype is integer type and convert to corresponding float type
+        if np.issubdtype(dtype, np.integer):
+            bytes_size = dtype.itemsize
+            dtype = np.dtype(f"float{bytes_size * 8}")
+        
+        if self.with_std:
+            stds = np.array([self.vars[c] ** 0.5 for c in X.columns], dtype=dtype)
+            np.multiply(Xt, stds, where=stds > 0, out=Xt)
+
+        means = np.array([self.means[c] for c in X.columns], dtype=dtype)
+        Xt = X.values + means
 
         return pd.DataFrame(Xt, index=X.index, columns=X.columns, copy=False)
 
