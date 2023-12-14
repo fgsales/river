@@ -34,6 +34,8 @@ from .trump_approval import TrumpApproval
 from .water_flow import WaterFlow
 from .web_traffic import WebTraffic
 
+from .metr_la import METR_LA
+
 __all__ = [
     "AirlinePassengers",
     "Bananas",
@@ -61,6 +63,7 @@ __all__ = [
     "TrumpApproval",
     "WaterFlow",
     "WebTraffic",
+    "METR_LA",
 ]
 
 

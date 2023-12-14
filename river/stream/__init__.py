@@ -8,7 +8,7 @@ from __future__ import annotations
 from .cache import Cache
 from .iter_arff import iter_arff
 from .iter_array import iter_array
-from .iter_csv import iter_csv
+from .iter_csv import iter_csv, sliding_window_iter_csv
 from .iter_libsvm import iter_libsvm
 from .qa import simulate_qa
 from .shuffling import shuffle
@@ -25,6 +25,7 @@ __all__ = [
     "shuffle",
     "TwitterLiveStream",
     "TwitchChatStream",
+    "sliding_window_iter_csv",
 ]
 
 try:

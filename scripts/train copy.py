@@ -44,49 +44,53 @@ pa_params_grid = {
 
 model_list = []
 
+hoeffding_tree_param_combinations = ParameterGrid(hoeffding_tree_params_grid)
+random_forest_param_combinations = ParameterGrid(random_forest_params_grid)
 neighbors_param_combinations = ParameterGrid(neighbors_params_grid)
 pa_param_combinations = ParameterGrid(pa_params_grid)
-mlp_hidden_dims = [(500,), (1000,), (2000,)]
+mlp_hidden_dims = [(5,), (5, 5), (10,), (10, 10), (20,), (20, 20)]
 
-# for params in mlp_hidden_dims:
-#     model = "MLPRegressor"
-#     model_list.append((model, params))
+for params in hoeffding_tree_param_combinations:
+    model = (preprocessing.StandardScaler() | tree.HoeffdingTreeRegressor(**params))
+    model_list.append((model, params))
 
-# for params in neighbors_param_combinations:
-#     model = (preprocessing.StandardScaler() | neighbors.KNNRegressor(**params))
-#     model_list.append((model, params))
+for params in hoeffding_tree_param_combinations:
+    model = (preprocessing.StandardScaler() | tree.HoeffdingAdaptiveTreeRegressor(**params))
+    model_list.append((model, params))
 
-# for params in pa_param_combinations:
-#     model = (preprocessing.StandardScaler() | linear_model.PARegressor(**params))
-#     model_list.append((model, params))
+for params in random_forest_param_combinations:
+    model = (preprocessing.StandardScaler() | forest.ARFRegressor(**params))
+    model_list.append((model, params))
 
-# model_list.append(((preprocessing.StandardScaler() | linear_model.LinearRegression()), {}))
+for params in mlp_hidden_dims:
+    model = "MLPRegressor"
+    model_list.append((model, params))
 
-submodel = linear_model.LinearRegression()
-model = (preprocessing.StandardScaler() | tree.iSOUPTreeRegressor(grace_period=10, model_selector_decay=0.5, leaf_model=submodel))
-# model = (preprocessing.StandardScaler() | tree.iSOUPTreeRegressor(grace_period=10, leaf_model=submodel, delta=0.01, merit_preprune=True, remove_poor_attrs=True))
-model_list.append((model, {}))
+for params in neighbors_param_combinations:
+    model = (preprocessing.StandardScaler() | neighbors.KNNRegressor(**params))
+    model_list.append((model, params))
+
+for params in pa_param_combinations:
+    model = (preprocessing.StandardScaler() | linear_model.PARegressor(**params))
+    model_list.append((model, params))
+
+model_list.append(((preprocessing.StandardScaler() | linear_model.LinearRegression()), {}))
 
 
 print(f"Created {len(model_list)} models")
 
-# datasets_list = [
-#     ["Trump",datasets.TrumpApproval()],
-#     # ["Airline",datasets.AirlinePassengers()],
-#     ["Banana",datasets.Bananas()],
-#     # ["Bikes",datasets.Bikes()],
-#     ["ChickWeights",datasets.ChickWeights()],
-#     # ["Restaurants",datasets.Restaurants()],
-#     # ["Taxis",datasets.Taxis()],
-#     # ["WaterFlow",datasets.WaterFlow()],
-# ]
-
 datasets_list = [
-    # ["Trump",datasets.TrumpApproval()],
-    ["METR_LA",datasets.METR_LA()],
+    ["Trump",datasets.TrumpApproval()],
+    # ["Airline",datasets.AirlinePassengers()],
+    ["Banana",datasets.Bananas()],
+    # ["Bikes",datasets.Bikes()],
+    ["ChickWeights",datasets.ChickWeights()],
+    # ["Restaurants",datasets.Restaurants()],
+    # ["Taxis",datasets.Taxis()],
+    # ["WaterFlow",datasets.WaterFlow()],
 ]
 
-percent = 0
+percent = 0.2
 
 header_row = ['Model', 'Params', 'Dataset', 'Metrics', 'Train Time (s)', 'Mean Learn Time (ms)', 'Mean Predict Time (ms)']
 
@@ -112,24 +116,16 @@ with open('results/results.csv', 'a', newline='') as file:
                     neural_net.MLPRegressor(hidden_dims=params, activations=activations_list, optimizer=optim.SGD(1e-3)))
 
             metrics_list = [
-                metrics.multioutput.MicroAverage(metrics.MAE()),
-                metrics.multioutput.MicroAverage(metrics.RMSE()),
-                metrics.multioutput.MicroAverage(metrics.MAPE())
+                metrics.MAE(),
+                metrics.MAPE(),
+                metrics.RMSE()
             ]
             learn_time_list = []
             predict_time_list = []
-            reading_time_list = []
-            finish_time = 0
-
-            print(dataset_name)
 
             start_train_time = time.time()
             for i, (x, y) in enumerate(dataset):
-                # print(f"Training {model} on {dataset_name} | {i}/{dataset.n_samples}", end='\r')
                 if i > percent * dataset.n_samples:
-                    if i > 0:
-                        reading_time_list.append(time.time() - finish_time)
-                # if i > percent * 50:
                     start_pred_time = time.time()
                     y_pred = model.predict_one(x)
                     predict_time_list.append(time.time() - start_pred_time)
@@ -140,14 +136,10 @@ with open('results/results.csv', 'a', newline='') as file:
                     start_learn_time = time.time()
                     model.learn_one(x, y)
                     learn_time_list.append(time.time() - start_learn_time)
-                    finish_time = time.time()
-                    print(f"Reading Time: {reading_time_list[-1]:.3f} | Learn Time: {learn_time_list[-1]:.3f} | Predict Time: {predict_time_list[-1]:.3f}", end='\r')
                 else:
                     start_learn_time = time.time()
                     model.learn_one(x, y)
                     learn_time_list.append(time.time() - start_learn_time)
-
-                # print the times for each step
                 
             current_model += 1
             progress = current_model / total_models
@@ -158,8 +150,6 @@ with open('results/results.csv', 'a', newline='') as file:
 
             end_train_time = time.time()
             train_time = end_train_time - start_train_time
-
-            print(learn_time_list)
 
             mean_learn_time = sum(learn_time_list) / len(learn_time_list)
             mean_predict_time = sum(predict_time_list) / len(predict_time_list)
