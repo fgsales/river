@@ -43,4 +43,16 @@ class GNN(torch.nn.Module):
 
         return output
 
+class NN(torch.nn.Module):
+    def __init__(self, input_size, hidden_size, pred_len):
+        super(NN, self).__init__()
 
+        self.body = torch.nn.Sequential(
+            torch.nn.Linear(input_size, hidden_size),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_size, pred_len)
+        )
+
+    def forward(self, x):
+        output = self.body(x)
+        return output

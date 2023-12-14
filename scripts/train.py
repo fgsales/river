@@ -9,6 +9,8 @@ from river import preprocessing
 from river import metrics
 from river import optim
 
+from .models import NN
+
 from sklearn.linear_model import LinearRegression
 from river.tree.splitter import TEBSTSplitter
 
@@ -62,10 +64,10 @@ mlp_hidden_dims = [(500,), (1000,), (2000,)]
 
 # model_list.append(((preprocessing.StandardScaler() | linear_model.LinearRegression()), {}))
 
-submodel = linear_model.LinearRegression()
-model = (preprocessing.StandardScaler() | tree.iSOUPTreeRegressor(grace_period=10, model_selector_decay=0.5, leaf_model=submodel))
-# model = (preprocessing.StandardScaler() | tree.iSOUPTreeRegressor(grace_period=10, leaf_model=submodel, delta=0.01, merit_preprune=True, remove_poor_attrs=True))
-model_list.append((model, {}))
+# model = GNN("GConvGRU", 1, 6, in_channels=12, out_channels=1, K=3)
+# model_list.append((model, {}))
+
+model = (preprocessing.StandardScaler() | NN(12, 100, 6))
 
 
 print(f"Created {len(model_list)} models")
@@ -103,13 +105,13 @@ with open('results/results.csv', 'a', newline='') as file:
     for (model, params) in model_list:
         
         for dataset_name, dataset in datasets_list:
-            if model == "MLPRegressor":
-                rename, value_rename = True, "MLPRegressor"
-                activations_list = [neural_net.activations.ReLU for _ in params]
-                activations_list.append(neural_net.activations.ReLU)
-                activations_list.append(neural_net.activations.Identity)
-                model = (preprocessing.StandardScaler() | 
-                    neural_net.MLPRegressor(hidden_dims=params, activations=activations_list, optimizer=optim.SGD(1e-3)))
+            # if model == "MLPRegressor":
+            #     rename, value_rename = True, "MLPRegressor"
+            #     activations_list = [neural_net.activations.ReLU for _ in params]
+            #     activations_list.append(neural_net.activations.ReLU)
+            #     activations_list.append(neural_net.activations.Identity)
+            #     model = (preprocessing.StandardScaler() | 
+            #         neural_net.MLPRegressor(hidden_dims=params, activations=activations_list, optimizer=optim.SGD(1e-3)))
 
             metrics_list = [
                 metrics.multioutput.MicroAverage(metrics.MAE()),
