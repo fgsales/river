@@ -20,9 +20,9 @@ class METR_LA(base.FileDataset):
         super().__init__(
             task=base.MO_REG,
             filename="data.csv",
-            directory="data/METR-LA",
-            n_features=207,
-            n_samples=34272-self.past_history-self.forecast_horizon,
+            directory="data/PEMS04",
+            n_features=921,
+            n_samples=16992-self.past_history-self.forecast_horizon,
         )
 
     def __iter__(self):

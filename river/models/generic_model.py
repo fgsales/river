@@ -44,7 +44,7 @@ class GNN(torch.nn.Module):
         return output
 
 class DenseNN(torch.nn.Module):
-    def __init__(self, hidden_size, num_features=207, past_history=12, pred_len=6):
+    def __init__(self, hidden_size, num_features, past_history=12, pred_len=6):
         super(DenseNN, self).__init__()
         input_size = num_features * past_history
         output_size = num_features * pred_len
@@ -60,7 +60,7 @@ class DenseNN(torch.nn.Module):
         return output
     
 class RNNModel(torch.nn.Module):
-    def __init__(self, hidden_size, num_features=207, past_history=12, pred_len=6):
+    def __init__(self, hidden_size, num_features, past_history=12, pred_len=6):
         super(RNNModel, self).__init__()
         output_size = num_features * pred_len
 
@@ -74,7 +74,7 @@ class RNNModel(torch.nn.Module):
         return out
     
 class CNNModel(torch.nn.Module):
-    def __init__(self, hidden_size, num_features=207, past_history=12, pred_len=6):
+    def __init__(self, hidden_size, num_features, past_history=12, pred_len=6):
         super(CNNModel, self).__init__()
         output_size = num_features * pred_len
 
