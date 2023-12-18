@@ -191,6 +191,20 @@ def iter_csv(
     # Reset the file size limit to it's original value
     csv.field_size_limit(limit)
 
+
+def fillna(history_row, last_valid_values, nan_values=[0]):
+
+    filled_history_row = history_row.copy()
+
+    for key, value in history_row.items():
+        if value in nan_values and key in last_valid_values:
+            filled_history_row[key] = last_valid_values[key]
+        elif value not in nan_values: # If the value is valid, update the valid values
+            last_valid_values[key] = value
+    
+    return filled_history_row, last_valid_values
+
+
 def sliding_window_iter_csv(
     filepath_or_buffer,
     target: str | list[str] | None = None,
@@ -198,6 +212,7 @@ def sliding_window_iter_csv(
     parse_dates: dict | None = None,
     drop: list[str] | None = None,
     drop_nones=False,
+    ffill=False,
     fraction=1.0,
     compression="infer",
     seed: int | None = None,
@@ -234,6 +249,8 @@ def sliding_window_iter_csv(
     history_buffer = deque(maxlen=past_history+forecast_horizon)
     # future_buffer = deque(maxlen=forecast_horizon)
 
+    last_valid_values = {}
+
     for row in reader:
         history_buffer.append(row.copy())
         
@@ -243,14 +260,19 @@ def sliding_window_iter_csv(
         window_data = {}
         # iterate until past history for past and the forecast horizon for future
         for i, history_row in enumerate(history_buffer):
+
+            if ffill: # History buffer forward filling
+                history_row, last_valid_values = fillna(history_row, last_valid_values)
+
+            offset = i - past_history + 1
+            key = ""
             if i < past_history:
-                offset = i - past_history + 1
-                for key, value in history_row.items():
-                    window_data[f'{key}_{offset}'] = value
+                key = f'{key}_{offset}'
             else:
-                offset = i - past_history + 1
-                for key, value in history_row.items():
-                    window_data[f'{key}_+{offset}'] = value
+                key = f'{key}_+{offset}'
+                
+            for key, value in history_row.items():
+                    window_data[f'{key}_{offset}'] = value
 
         if drop:
             window_data = {k: v for k, v in window_data.items() if k.split('_')[0] not in drop}
@@ -270,6 +292,7 @@ def sliding_window_iter_csv(
         # Drop Nones
         if drop_nones:
             window_data = {k: v for k, v in window_data.items() if v is not None}
+
 
         # Parse dates
         if parse_dates is not None:
