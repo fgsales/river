@@ -35,6 +35,9 @@ from .water_flow import WaterFlow
 from .web_traffic import WebTraffic
 
 from .metr_la import METR_LA
+from .pems_03 import PEMS_03
+from .pems_04 import PEMS_04
+from .pems_bay import PEMS_BAY
 
 __all__ = [
     "AirlinePassengers",
@@ -64,6 +67,9 @@ __all__ = [
     "WaterFlow",
     "WebTraffic",
     "METR_LA",
+    "PEMS_03",
+    "PEMS_04",
+    "PEMS_BAY",
 ]
 
 

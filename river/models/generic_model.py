@@ -49,14 +49,14 @@ class DenseNN(torch.nn.Module):
         input_size = num_features * past_history
         output_size = num_features * pred_len
 
-        self.body = torch.nn.Sequential(
-            torch.nn.Linear(input_size, hidden_size),
-            torch.nn.ReLU(),
-            torch.nn.Linear(hidden_size, output_size)
-        )
+        self.fc_1 = torch.nn.Linear(input_size, hidden_size),
+        self.relu = torch.nn.ReLU(),
+        self.fc_2 = torch.nn.Linear(hidden_size, output_size),
 
     def forward(self, x):
-        output = self.body(x)
+        out = self.fc_1(x)
+        out = self.relu(out)
+        output = self.fc_2(out)
         return output
     
 class RNNModel(torch.nn.Module):

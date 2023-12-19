@@ -1,10 +1,12 @@
-from .generic_model import GNN, NN
+from .generic_model import GNN, DenseNN, RNNModel, CNNModel
 from .utils import get_loss_fn, get_optimizer_fn
 
 
 __all__ = [
     "GNN",
-    "NN",
+    "DenseNN",
+    "RNNModel",
+    "CNNModel",
     "get_loss_fn",
     "get_optimizer_fn"
 ]

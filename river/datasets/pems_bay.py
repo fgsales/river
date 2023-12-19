@@ -5,7 +5,7 @@ from river import stream
 from . import base
 
 
-class METR_LA(base.FileDataset):
+class PEMS_BAY(base.FileDataset):
     """Solar flare multi-output regression.
 
     References

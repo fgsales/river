@@ -12,11 +12,11 @@ from river import preprocessing
 from river import metrics
 from river import optim
 
-from river.models import NN
+from river.models import DenseNN
 from river.models import get_loss_fn, get_optimizer_fn
 
 model_list = []
-model_name = "NN"
+model_name = "DenseNN"
 model_params = {"hidden_size": 207*12}
 
 model_list.append((model_name, model_params))
@@ -24,7 +24,10 @@ model_list.append((model_name, model_params))
 print(f"Created {len(model_list)} models")
 
 datasets_list = [
-    ["METR_LA",datasets.METR_LA().take(5000)],
+    ["METR_LA",datasets.METR_LA()],
+    ["PEMS_BAY",datasets.PEMS_BAY()],
+    ["PEMS_03",datasets.PEMS_03()],
+    ["PEMS_04",datasets.PEMS_04()]
 ]
 
 percent = 0
@@ -48,8 +51,10 @@ with open(results_path, 'a', newline='') as file:
     for (model_name, params) in model_list:
         
         for dataset_name, dataset in datasets_list:
-            # model = NN(input_size=dataset.n_features*dataset.past_history, pred_len=dataset.n_features*dataset.forecast_horizon, **params)
-            model = NN(input_size=207*12, pred_len=207*6, **params)
+            model = DenseNN(num_features=dataset.n_features, past_history=dataset.past_history, pred_len=dataset.forecast_horizon, **params)
+            # model = DenseNN(input_size=207*12, pred_len=207*6, **params)
+
+            print(model)
 
             # Constants
             optimizer_name = "sgd"
@@ -84,9 +89,9 @@ with open(results_path, 'a', newline='') as file:
                 y = scaler.transform_one(y)
 
                 # print(f"Training {model_name} on {dataset_name} | {i}/{dataset.n_samples}", end='\r')
-                # if i > percent * dataset.n_samples:
+                if i > percent * dataset.n_samples:
                 # print(f"Training {model_name} on {dataset_name} | {i}/{5000}", end='\r')
-                if i > percent * 5000:
+                # if i > percent * 5000:
                     if i > 0:
                         reading_time_list.append(time.time() - finish_time)
                     start_pred_time = time.time()
