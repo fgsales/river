@@ -265,11 +265,11 @@ def sliding_window_iter_csv(
                 history_row, last_valid_values = fillna(history_row, last_valid_values)
 
             offset = i - past_history + 1
-            key = ""
-            if i < past_history:
-                key = f'{key}_{offset}'
-            else:
-                key = f'{key}_+{offset}'
+            # key = ""
+            # if i < past_history:
+            #     key = f'{key}_{offset}'
+            # else:
+            #     key = f'{key}_+{offset}'
                 
             for key, value in history_row.items():
                     window_data[f'{key}_{offset}'] = value
@@ -307,7 +307,7 @@ def sliding_window_iter_csv(
         if target is None:
             # If target is None, select all variables with future offsets as targets
             for key in list(window_data.keys()):
-                if key.endswith(tuple([f"_+{i}" for i in range(1, forecast_horizon + 1)])):
+                if key.endswith(tuple([f"_{i}" for i in range(1, forecast_horizon + 1)])):
                     y[key] = window_data.pop(key)
         else:
             target_keys = [target] if isinstance(target, str) else target

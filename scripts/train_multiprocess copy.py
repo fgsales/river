@@ -15,6 +15,16 @@ from river import optim
 from river.models import DenseNN, RNNModel, CNNModel
 from river.models import get_loss_fn, get_optimizer_fn
 
+num_gpus = torch.cuda.device_count()
+gpu_status = {i: 'available' for i in range(num_gpus)}
+
+def get_available_gpu():
+    while True:
+        for gpu_id, status in gpu_status.items():
+            if status == 'available':
+                return gpu_id
+        time.sleep(1)  # Wait for a second before checking again
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 model_list = []
@@ -63,7 +73,11 @@ with open(results_path, 'a', newline='') as file:
             else:
                 raise Exception("Invalid model name")
             
-
+            gpu_id = get_available_gpu()
+            device = torch.device(f"cuda:{gpu_id}" if torch.cuda.is_available() else "cpu")
+            gpu_status[gpu_id] = 'in use'
+            print()
+            
             model.to(device)
 
             # Constants
@@ -109,16 +123,9 @@ with open(results_path, 'a', newline='') as file:
                     # Inference
                     model.eval()
 
-                    x_tensor = torch.tensor(list(x.values()))
+                    x = torch.tensor(list(x.values())).to(device)
 
-                    if model_name == "RNNModel":
-                        sequence_length = dataset.past_history
-                        num_features = dataset.n_features
-                        x_tensor = x_tensor.view(sequence_length, num_features)
-
-                    x_tensor = x_tensor.to(device)
-
-                    y_pred = model(x_tensor)
+                    y_pred = model(x)
 
                     y_pred = y_pred.detach().cpu().numpy()
                     y_pred = {k: y_pred[i] for i, k in enumerate(y.keys())}
@@ -135,7 +142,7 @@ with open(results_path, 'a', newline='') as file:
                     optimizer.zero_grad()
                     y_tensor = torch.tensor(list(y.values())).to(device)
 
-                    y_pred = model(x_tensor)
+                    y_pred = model(x)
                     predict_time_list.append(time.time() - start_pred_time)
 
                     loss = torch.mean((y_pred-y_tensor)**2)
@@ -152,15 +159,7 @@ with open(results_path, 'a', newline='') as file:
                 else:
                     start_learn_time = time.time()
 
-                    x_tensor = torch.tensor(list(x.values()))
-
-                    if model_name == "RNNModel":
-                        # Example reshape for RNNModel, adjust as needed
-                        sequence_length = dataset.past_history
-                        num_features = dataset.n_features
-                        x_tensor = x_tensor.view(sequence_length, num_features)
-
-                    x_tensor = x_tensor.to(device)
+                    x = torch.tensor(list(x.values())).to(device)
 
                     # Train
                     model.train()
@@ -168,7 +167,7 @@ with open(results_path, 'a', newline='') as file:
 
                     y_tensor = torch.tensor(list(y.values())).to(device)
 
-                    y_pred = model(x_tensor)
+                    y_pred = model(x)
 
                     loss = torch.mean((y_pred-y_tensor)**2)
 
@@ -189,6 +188,7 @@ with open(results_path, 'a', newline='') as file:
             remaining_models = total_models - current_model
             total_time = time.time() - init_time
             estimated_time = (total_time/current_model) * remaining_models
+            gpu_status[gpu_id] = 'available'
             print(f"Progress: {progress:.1%} | Estimated Time to Finish: {estimated_time:.2f} seconds", end='\r')
 
             end_train_time = time.time()
